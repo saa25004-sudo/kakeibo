@@ -48,15 +48,20 @@
                 </div>
 
                 <!-- Unauthenticated State -->
-                <button id="btn-login" class="hidden flex items-center gap-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 font-medium px-4 py-2 rounded-xl transition shadow-sm text-sm">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                    </svg>
-                    Googleでログイン
-                </button>
+                <div id="unauth-buttons" class="hidden flex items-center gap-2">
+                    <button id="btn-login" class="flex items-center gap-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 font-medium px-3 py-2 rounded-xl transition shadow-sm text-sm">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                        Googleでログイン
+                    </button>
+                    <button id="btn-guest-login" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3 py-2 rounded-xl transition text-sm">
+                        ゲスト利用
+                    </button>
+                </div>
 
                 <!-- Authenticated State -->
                 <div id="user-profile" class="hidden flex items-center gap-3">
@@ -83,9 +88,14 @@
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800 mb-2">シンプルに家計を管理</h2>
                 <p class="text-slate-500 text-sm mb-6">Googleアカウントでログインすると、収支の記録やグラフによる分析データをいつでもクラウドに保存できます。</p>
-                <button id="btn-hero-login" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-md transition flex items-center justify-center gap-2">
-                    <i class="fa-brands fa-google"></i> Googleで今すぐ始める
-                </button>
+                <div class="space-y-3">
+                    <button id="btn-hero-login" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                        <i class="fa-brands fa-google"></i> Googleでログイン
+                    </button>
+                    <button id="btn-hero-guest" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-user"></i> ゲスト(お試し)で利用する
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -255,6 +265,34 @@
         <span id="toast-text">処理が完了しました</span>
     </div>
 
+    <!-- Error Diagnostic Modal -->
+    <div id="error-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100 text-left">
+            <div class="flex items-start gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-slate-800">ログインエラーが発生しました</h3>
+                    <p id="error-code-text" class="text-xs font-mono bg-slate-100 text-rose-600 px-2 py-1 rounded mt-1 inline-block"></p>
+                </div>
+            </div>
+
+            <div id="error-solution-content" class="text-sm text-slate-600 space-y-3 my-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <!-- Solutions injected dynamically based on error code -->
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button id="btn-error-close" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-xl text-sm transition">
+                    閉じる
+                </button>
+                <button id="btn-error-guest" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl text-sm transition">
+                    ゲストモードで試す
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
         &copy; 2026 Smart Household Budget. All rights reserved.
@@ -267,6 +305,9 @@
             getAuth, 
             GoogleAuthProvider, 
             signInWithPopup, 
+            signInWithRedirect,
+            getRedirectResult,
+            signInAnonymously, 
             signOut, 
             onAuthStateChanged 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -328,85 +369,136 @@
         const authLoading = document.getElementById('auth-loading');
         const btnLogin = document.getElementById('btn-login');
         const btnHeroLogin = document.getElementById('btn-hero-login');
+        const unauthButtons = document.getElementById('unauth-buttons');
+        const btnGuestLogin = document.getElementById('btn-guest-login');
+        const btnHeroGuest = document.getElementById('btn-hero-guest');
+        const errorModal = document.getElementById('error-modal');
+        const errorCodeText = document.getElementById('error-code-text');
+        const errorSolutionContent = document.getElementById('error-solution-content');
+        const btnErrorClose = document.getElementById('btn-error-close');
+        const btnErrorGuest = document.getElementById('btn-error-guest');
+
         const btnLogout = document.getElementById('btn-logout');
         const userProfile = document.getElementById('user-profile');
         const userAvatar = document.getElementById('user-avatar');
         const userName = document.getElementById('user-name');
 
         const loggedOutView = document.getElementById('logged-out-view');
-        const dashboardView = document.getElementById('dashboard-view');
-
-        const monthPicker = document.getElementById('month-picker');
-        const btnPrevMonth = document.getElementById('btn-prev-month');
-        const btnNextMonth = document.getElementById('btn-next-month');
-
-        const statIncome = document.getElementById('stat-income');
-        const statExpense = document.getElementById('stat-expense');
-        const statBalance = document.getElementById('stat-balance');
-
-        const transactionList = document.getElementById('transaction-list');
-        const transactionCount = document.getElementById('transaction-count');
-
-        const entryModal = document.getElementById('entry-modal');
-        const btnOpenModal = document.getElementById('btn-open-modal');
-        const btnCloseModal = document.getElementById('btn-close-modal');
-        const entryForm = document.getElementById('entry-form');
-        const inputDate = document.getElementById('input-date');
-        const inputCategory = document.getElementById('input-category');
-
-        // Helper Functions
-        function getCurrentYearMonth() {
-            const d = new Date();
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            return `${year}-${month}`;
-        }
-
-        function formatCurrency(amount) {
-            return '¥' + Number(amount).toLocaleString('ja-JP');
-        }
-
-        function showToast(message, isError = false) {
-            const toast = document.getElementById('toast-message');
-            const toastText = document.getElementById('toast-text');
-            const toastIcon = document.getElementById('toast-icon');
-
-            toastText.textContent = message;
-            toastIcon.className = isError 
-                ? "fa-solid fa-circle-exclamation text-rose-400" 
-                : "fa-solid fa-circle-check text-emerald-400";
-
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
-        }
-
-        // Google Authentication Logic
+        // Google Authentication & Diagnostics Logic
         const provider = new GoogleAuthProvider();
+
+        // Process redirect login result if user returns from Google auth redirect
+        getRedirectResult(auth).then((result) => {
+            if (result && result.user) {
+                showToast("ログインしました");
+            }
+        }).catch((error) => {
+            console.error("Redirect auth error:", error);
+            showLoginErrorModal(error);
+        });
 
         async function handleLogin() {
             try {
+                // Try popup login first
                 await signInWithPopup(auth, provider);
                 showToast("ログインしました");
             } catch (error) {
-                console.error("Login failed:", error);
-                showToast("ログインに失敗しました: " + error.message, true);
+                console.warn("Login popup failed/blocked, falling back to redirect:", error);
+                
+                // If popup is blocked by COOP policy or closed, fallback to redirect login
+                if (error.code === 'auth/popup-blocked' || 
+                    error.code === 'auth/popup-closed-by-user' || 
+                    error.code === 'auth/cancelled-popup-request' ||
+                    (error.message && error.message.includes('Cross-Origin-Opener-Policy'))) {
+                    try {
+                        await signInWithRedirect(auth, provider);
+                    } catch (redirectErr) {
+                        showLoginErrorModal(redirectErr);
+                    }
+                } else {
+                    showLoginErrorModal(error);
+                }
             }
         }
 
-        async function handleLogout() {
+        async function handleGuestLogin() {
             try {
-                await signOut(auth);
-                showToast("ログアウトしました");
+                await signInAnonymously(auth);
+                showToast("ゲストとしてログインしました");
             } catch (error) {
-                console.error("Logout failed:", error);
-                showToast("ログアウトに失敗しました", true);
+                console.error("Guest login failed:", error);
+                showToast("ゲストログインに失敗しました: " + error.message, true);
             }
+        }
+
+        function showLoginErrorModal(error) {
+            errorCodeText.textContent = error.code || error.message;
+            
+            let solutionHtml = '';
+            
+            if (error.code === 'permission-denied' || (error.message && error.message.includes('insufficient permissions'))) {
+                solutionHtml = `
+                    <p class="font-bold text-rose-600">【重要】Firestore データベースへのアクセス権限エラー</p>
+                    <p class="mt-1">Firebase コンソールで Firestore のセキュリティルールが設定されていないため、データの読み書きが拒否されました。</p>
+                    <p class="font-semibold text-slate-700 mt-3">【解決手順】</p>
+                    <ol class="list-decimal list-inside space-y-1 text-xs text-slate-600">
+                        <li><a href="https://console.firebase.google.com/" target="_blank" class="text-emerald-600 underline font-semibold">Firebase Console</a> にアクセス</li>
+                        <li><strong>Firestore Database</strong> ➔ <strong>ルール (Rules)</strong> タブを開く</li>
+                        <li>ルールに <code>allow read, write: if request.auth != null;</code> を設定し、「公開」を押してください。</li>
+                    </ol>
+                `;
+            } else if (error.code === 'auth/unauthorized-domain') {
+                solutionHtml = `
+                    <p class="font-bold text-slate-800">【原因】承認されていないドメインです</p>
+                    <p>現在アプリを実行しているWebサイトのアドレスが Firebase の許可リストに登録されていません。</p>
+                    <p class="font-semibold text-slate-700 mt-2">【対処手順】</p>
+                    <ol class="list-decimal list-inside space-y-1 text-xs text-slate-600">
+                        <li>Firebase Console にアクセス</li>
+                        <li><strong>Authentication</strong> ➔ <strong>設定 (Settings)</strong> タブを開く</li>
+                        <li><strong>承認済みドメイン (Authorized domains)</strong> に現在のドメインを追加してください。</li>
+                    </ol>
+                `;
+            } else if (error.code === 'auth/operation-not-allowed') {
+                solutionHtml = `
+                    <p class="font-bold text-slate-800">【原因】Googleログインが無効になっています</p>
+                    <p>Firebase コンソールで Google 認証機能が有効化されていません。</p>
+                    <p class="font-semibold text-slate-700 mt-2">【対処手順】</p>
+                    <ol class="list-decimal list-inside space-y-1 text-xs text-slate-600">
+                        <li>Firebase Console にアクセス</li>
+                        <li><strong>Authentication</strong> ➔ <strong>Sign-in method</strong> タブを開く</li>
+                        <li><strong>Google</strong> を選択し「有効にする」をオンにして保存します。</li>
+                    </ol>
+                `;
+            } else if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+                solutionHtml = `
+                    <p class="font-bold text-slate-800">【原因】ポップアップがブロックまたは閉じられました</p>
+                    <p>ブラウザのポップアップブロック機能や、プレビュー画面の制限によってログイン画面が遮断されました。</p>
+                    <p class="mt-2 text-xs">※ 「ゲスト利用」を選択すると、今すぐ動作を試すことができます。</p>
+                `;
+            } else {
+                solutionHtml = `
+                    <p class="font-bold text-slate-800">【原因】認証エラー</p>
+                    <p>${error.message}</p>
+                    <p class="mt-2 text-xs">※ ゲストログインを使用すれば、Google認証の設定なしで家計簿機能をお試しいただけます。</p>
+                `;
+            }
+
+            errorSolutionContent.innerHTML = solutionHtml;
+            errorModal.classList.remove('hidden');
         }
 
         btnLogin.addEventListener('click', handleLogin);
         btnHeroLogin.addEventListener('click', handleLogin);
+        btnGuestLogin.addEventListener('click', handleGuestLogin);
+        btnHeroGuest.addEventListener('click', handleGuestLogin);
+        
+        btnErrorGuest.addEventListener('click', () => {
+            errorModal.classList.add('hidden');
+            handleGuestLogin();
+        });
+        btnErrorClose.addEventListener('click', () => {
+            errorModal.classList.add('hidden');
+        });
         btnLogout.addEventListener('click', handleLogout);
 
         // Auth State Observer
@@ -414,11 +506,11 @@
             authLoading.classList.add('hidden');
             if (user) {
                 currentUser = user;
-                userName.textContent = user.displayName || "ユーザー";
-                userAvatar.src = user.photoURL || "https://placehold.co/100x100/e2e8f0/64748b?text=User";
+                userName.textContent = user.isAnonymous ? "ゲストユーザー" : (user.displayName || "ユーザー");
+                userAvatar.src = user.photoURL || `https://placehold.co/100x100/10b981/ffffff?text=${user.isAnonymous ? 'G' : 'U'}`;
                 
                 userProfile.classList.remove('hidden');
-                btnLogin.classList.add('hidden');
+                unauthButtons.classList.add('hidden');
                 loggedOutView.classList.add('hidden');
                 dashboardView.classList.remove('hidden');
 
@@ -432,7 +524,7 @@
                 if (unsubscribeSnapshot) unsubscribeSnapshot();
                 
                 userProfile.classList.add('hidden');
-                btnLogin.classList.remove('hidden');
+                unauthButtons.classList.remove('hidden');
                 loggedOutView.classList.remove('hidden');
                 dashboardView.classList.add('hidden');
             }
@@ -457,155 +549,13 @@
                 renderDashboard();
             }, (error) => {
                 console.error("Firestore read error:", error);
-                showToast("データの読み込みエラーが発生しました", true);
-            });
-        }
-
-        // Render Dashboard Content
-        function renderDashboard() {
-            // Filter by selected YYYY-MM
-            const filteredTransactions = allTransactions.filter(item => item.date && item.date.startsWith(selectedYearMonth));
-
-            // Calculations
-            let totalIncome = 0;
-            let totalExpense = 0;
-            const categorySums = {};
-
-            filteredTransactions.forEach(item => {
-                const amount = Number(item.amount) || 0;
-                if (item.type === 'income') {
-                    totalIncome += amount;
+                if (error.code === 'permission-denied') {
+                    showLoginErrorModal({
+                        code: 'permission-denied',
+                        message: 'Missing or insufficient permissions.'
+                    });
                 } else {
-                    totalExpense += amount;
-                    categorySums[item.category] = (categorySums[item.category] || 0) + amount;
-                }
-            });
-
-            // Update Cards
-            statIncome.textContent = formatCurrency(totalIncome);
-            statExpense.textContent = formatCurrency(totalExpense);
-            
-            const balance = totalIncome - totalExpense;
-            statBalance.textContent = formatCurrency(balance);
-            statBalance.className = `text-2xl font-bold mt-1 ${balance >= 0 ? 'text-slate-800' : 'text-rose-600'}`;
-
-            // Render Transaction List
-            renderTransactionList(filteredTransactions);
-
-            // Render Pie Chart
-            renderChart(categorySums);
-        }
-
-        // Render Transaction List UI
-        function renderTransactionList(transactions) {
-            transactionCount.textContent = `${transactions.length}件`;
-
-            if (transactions.length === 0) {
-                transactionList.innerHTML = `
-                    <div class="text-center py-12 text-slate-400">
-                        <i class="fa-solid fa-receipt text-3xl mb-2 opacity-50"></i>
-                        <p class="text-sm">この月のデータは登録されていません</p>
-                    </div>
-                `;
-                return;
-            }
-
-            transactionList.innerHTML = transactions.map(item => {
-                const isExpense = item.type === 'expense';
-                const catList = isExpense ? CATEGORIES.expense : CATEGORIES.income;
-                const catInfo = catList.find(c => c.name === item.category) || { icon: 'fa-tag', color: '#94a3b8' };
-
-                return `
-                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-slate-100/80 transition border border-slate-100">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white" style="background-color: ${catInfo.color}">
-                                <i class="fa-solid ${catInfo.icon}"></i>
-                            </div>
-                            <div>
-                                <div class="font-semibold text-sm text-slate-800">${escapeHtml(item.category)}</div>
-                                <div class="text-xs text-slate-400 flex items-center gap-2">
-                                    <span>${item.date}</span>
-                                    ${item.memo ? `<span>• ${escapeHtml(item.memo)}</span>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <span class="font-bold text-sm ${isExpense ? 'text-rose-500' : 'text-emerald-600'}">
-                                ${isExpense ? '-' : '+'}${formatCurrency(item.amount)}
-                            </span>
-                            <button data-id="${item.id}" class="btn-delete text-slate-300 hover:text-rose-500 transition p-1.5">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            // Add delete event listeners
-            document.querySelectorAll('.btn-delete').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const docId = e.currentTarget.getAttribute('data-id');
-                    await deleteTransaction(docId);
-                });
-            });
-        }
-
-        // HTML Escape Utility
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>"']/g, function(m) {
-                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-            });
-        }
-
-        // Render Chart.js Pie Chart
-        function renderChart(categorySums) {
-            const ctx = document.getElementById('category-chart').getContext('2d');
-            const noDataEl = document.getElementById('chart-no-data');
-
-            const labels = Object.keys(categorySums);
-            const data = Object.values(categorySums);
-
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
-
-            if (labels.length === 0) {
-                noDataEl.classList.remove('hidden');
-                return;
-            } else {
-                noDataEl.classList.add('hidden');
-            }
-
-            const colors = labels.map(label => {
-                const found = CATEGORIES.expense.find(c => c.name === label);
-                return found ? found.color : '#cbd5e1';
-            });
-
-            chartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: colors,
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                font: { size: 11 }
-                            }
-                        }
-                    },
-                    cutout: '65%'
+                    showToast("データの読み込みエラーが発生しました", true);
                 }
             });
         }
