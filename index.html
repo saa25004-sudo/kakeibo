@@ -336,6 +336,14 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Helper: Get Current YYYY-MM
+        function getCurrentYearMonth() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            return `${year}-${month}`;
+        }
+
         // App State
         let currentUser = null;
         let unsubscribeSnapshot = null;
@@ -384,10 +392,58 @@
         const userName = document.getElementById('user-name');
 
         const loggedOutView = document.getElementById('logged-out-view');
-        // Google Authentication & Diagnostics Logic
+        const dashboardView = document.getElementById('dashboard-view');
+        const monthPicker = document.getElementById('month-picker');
+        const btnPrevMonth = document.getElementById('btn-prev-month');
+        const btnNextMonth = document.getElementById('btn-next-month');
+        const btnOpenModal = document.getElementById('btn-open-modal');
+        const btnCloseModal = document.getElementById('btn-close-modal');
+        const entryModal = document.getElementById('entry-modal');
+        const entryForm = document.getElementById('entry-form');
+        const inputDate = document.getElementById('input-date');
+        const inputCategory = document.getElementById('input-category');
+        const statIncome = document.getElementById('stat-income');
+        const statExpense = document.getElementById('stat-expense');
+        const statBalance = document.getElementById('stat-balance');
+        const transactionList = document.getElementById('transaction-list');
+        const transactionCount = document.getElementById('transaction-count');
+        const chartNoData = document.getElementById('chart-no-data');
+        const toastMessage = document.getElementById('toast-message');
+        const toastText = document.getElementById('toast-text');
+        const toastIcon = document.getElementById('toast-icon');
+
+        function formatCurrency(amount) {
+            return '¥' + Number(amount || 0).toLocaleString('ja-JP');
+        }
+
+        function showToast(message, isError = false) {
+            toastText.textContent = message;
+            if (isError) {
+                toastIcon.className = 'fa-solid fa-circle-exclamation text-rose-400';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400';
+            }
+            toastMessage.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toastMessage.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+
         const provider = new GoogleAuthProvider();
 
-        // Process redirect login result if user returns from Google auth redirect
         getRedirectResult(auth).then((result) => {
             if (result && result.user) {
                 showToast("ログインしました");
@@ -399,13 +455,10 @@
 
         async function handleLogin() {
             try {
-                // Try popup login first
                 await signInWithPopup(auth, provider);
                 showToast("ログインしました");
             } catch (error) {
                 console.warn("Login popup failed/blocked, falling back to redirect:", error);
-                
-                // If popup is blocked by COOP policy or closed, fallback to redirect login
                 if (error.code === 'auth/popup-blocked' || 
                     error.code === 'auth/popup-closed-by-user' || 
                     error.code === 'auth/cancelled-popup-request' ||
@@ -431,21 +484,53 @@
             }
         }
 
+        async function handleLogout() {
+            try {
+                await signOut(auth);
+                showToast("ログアウトしました");
+            } catch (error) {
+                console.error("Logout error:", error);
+                showToast("ログアウトに失敗しました", true);
+            }
+        }
+
         function showLoginErrorModal(error) {
             errorCodeText.textContent = error.code || error.message;
-            
             let solutionHtml = '';
             
             if (error.code === 'permission-denied' || (error.message && error.message.includes('insufficient permissions'))) {
                 solutionHtml = `
-                    <p class="font-bold text-rose-600">【重要】Firestore データベースへのアクセス権限エラー</p>
-                    <p class="mt-1">Firebase コンソールで Firestore のセキュリティルールが設定されていないため、データの読み書きが拒否されました。</p>
-                    <p class="font-semibold text-slate-700 mt-3">【解決手順】</p>
-                    <ol class="list-decimal list-inside space-y-1 text-xs text-slate-600">
-                        <li><a href="https://console.firebase.google.com/" target="_blank" class="text-emerald-600 underline font-semibold">Firebase Console</a> にアクセス</li>
-                        <li><strong>Firestore Database</strong> ➔ <strong>ルール (Rules)</strong> タブを開く</li>
-                        <li>ルールに <code>allow read, write: if request.auth != null;</code> を設定し、「公開」を押してください。</li>
-                    </ol>
+                    <div class="space-y-3">
+                        <p class="font-bold text-rose-600 flex items-center gap-1.5">
+                            <i class="fa-solid fa-lock"></i> Firestore のアクセス制限エラー
+                        </p>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Firebaseコンソールで<b>セキュリティルール</b>が設定されていないため、データベースへの読み書きが拒否されています。
+                        </p>
+                        
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-xs space-y-2">
+                            <p class="font-semibold text-slate-700">【解決手順 (所要時間1分)】</p>
+                            <ol class="list-decimal list-inside text-slate-600 space-y-1">
+                                <li><a href="https://console.firebase.google.com/" target="_blank" class="text-emerald-600 underline font-semibold">Firebase Console</a> を開く</li>
+                                <li><b>Firestore Database</b> ➔ <b>ルール (Rules)</b> を開く</li>
+                                <li>下のコードに書き換えて<b>「公開」</b>を押す</li>
+                            </ol>
+                        </div>
+
+                        <div class="relative">
+                            <pre class="bg-slate-800 text-slate-100 text-xs p-3 rounded-xl overflow-x-auto font-mono select-all">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}</pre>
+                            <button id="btn-copy-rules" type="button" class="absolute top-2 right-2 bg-slate-700 hover:bg-slate-600 text-white text-[11px] px-2.5 py-1 rounded-lg transition flex items-center gap-1">
+                                <i class="fa-regular fa-copy"></i> ルールをコピー
+                            </button>
+                        </div>
+                    </div>
                 `;
             } else if (error.code === 'auth/unauthorized-domain') {
                 solutionHtml = `
@@ -469,22 +554,34 @@
                         <li><strong>Google</strong> を選択し「有効にする」をオンにして保存します。</li>
                     </ol>
                 `;
-            } else if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
-                solutionHtml = `
-                    <p class="font-bold text-slate-800">【原因】ポップアップがブロックまたは閉じられました</p>
-                    <p>ブラウザのポップアップブロック機能や、プレビュー画面の制限によってログイン画面が遮断されました。</p>
-                    <p class="mt-2 text-xs">※ 「ゲスト利用」を選択すると、今すぐ動作を試すことができます。</p>
-                `;
             } else {
                 solutionHtml = `
                     <p class="font-bold text-slate-800">【原因】認証エラー</p>
-                    <p>${error.message}</p>
+                    <p>${escapeHtml(error.message)}</p>
                     <p class="mt-2 text-xs">※ ゲストログインを使用すれば、Google認証の設定なしで家計簿機能をお試しいただけます。</p>
                 `;
             }
 
             errorSolutionContent.innerHTML = solutionHtml;
             errorModal.classList.remove('hidden');
+
+            const btnCopy = document.getElementById('btn-copy-rules');
+            if (btnCopy) {
+                btnCopy.addEventListener('click', () => {
+                    const rulesText = `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if request.auth != null;\n    }\n  }\n}`;
+                    const textarea = document.createElement('textarea');
+                    textarea.value = rulesText;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    try {
+                        document.execCommand('copy');
+                        showToast("ルールをコピーしました");
+                    } catch (err) {
+                        showToast("コピーに失敗しました", true);
+                    }
+                    document.body.removeChild(textarea);
+                });
+            }
         }
 
         btnLogin.addEventListener('click', handleLogin);
@@ -501,7 +598,6 @@
         });
         btnLogout.addEventListener('click', handleLogout);
 
-        // Auth State Observer
         onAuthStateChanged(auth, (user) => {
             authLoading.classList.add('hidden');
             if (user) {
@@ -514,10 +610,7 @@
                 loggedOutView.classList.add('hidden');
                 dashboardView.classList.remove('hidden');
 
-                // Initialize Month Picker
                 monthPicker.value = selectedYearMonth;
-
-                // Load User Data
                 listenToUserData();
             } else {
                 currentUser = null;
@@ -530,11 +623,9 @@
             }
         });
 
-        // Firestore Real-time Sync
         function listenToUserData() {
             if (!currentUser) return;
 
-            // Firestore Path: artifacts/rinunu/users/{uid}/transactions
             const userTransactionsRef = collection(db, "artifacts", "rinunu", "users", currentUser.uid, "transactions");
 
             unsubscribeSnapshot = onSnapshot(userTransactionsRef, (snapshot) => {
@@ -543,9 +634,7 @@
                     ...doc.data()
                 }));
 
-                // Sort transactions by date descending
                 allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-
                 renderDashboard();
             }, (error) => {
                 console.error("Firestore read error:", error);
@@ -560,7 +649,6 @@
             });
         }
 
-        // Delete Transaction
         async function deleteTransaction(docId) {
             if (!currentUser || !docId) return;
             try {
@@ -572,8 +660,136 @@
                 showToast("削除に失敗しました", true);
             }
         }
+        window.deleteTransaction = deleteTransaction;
 
-        // Month Selection Handlers
+        function renderDashboard() {
+            const filtered = allTransactions.filter(t => t.date && t.date.startsWith(selectedYearMonth));
+            
+            let totalIncome = 0;
+            let totalExpense = 0;
+            const categoryTotals = {};
+
+            filtered.forEach(t => {
+                const amt = Number(t.amount) || 0;
+                if (t.type === 'income') {
+                    totalIncome += amt;
+                } else if (t.type === 'expense') {
+                    totalExpense += amt;
+                    categoryTotals[t.category] = (categoryTotals[t.category] || 0) + amt;
+                }
+            });
+
+            const netBalance = totalIncome - totalExpense;
+
+            statIncome.textContent = formatCurrency(totalIncome);
+            statExpense.textContent = formatCurrency(totalExpense);
+            statBalance.textContent = formatCurrency(netBalance);
+            statBalance.className = `text-2xl font-bold mt-1 ${netBalance >= 0 ? 'text-slate-800' : 'text-rose-600'}`;
+
+            renderTransactionList(filtered);
+            renderChart(categoryTotals);
+        }
+
+        function renderTransactionList(transactions) {
+            transactionCount.textContent = `${transactions.length}件`;
+
+            if (transactions.length === 0) {
+                transactionList.innerHTML = `
+                    <div class="text-center py-12 text-slate-400">
+                        <i class="fa-solid fa-receipt text-3xl mb-2 opacity-50"></i>
+                        <p class="text-sm">データが登録されていません</p>
+                    </div>
+                `;
+                return;
+            }
+
+            transactionList.innerHTML = transactions.map(t => {
+                const catConfig = (CATEGORIES[t.type] || []).find(c => c.name === t.category) || { icon: 'fa-tag', color: '#94a3b8' };
+                const isExpense = t.type === 'expense';
+                const amountPrefix = isExpense ? '-' : '+';
+                const amountClass = isExpense ? 'text-rose-600 font-bold' : 'text-emerald-600 font-bold';
+
+                return `
+                    <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl hover:bg-slate-100/80 transition group border border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0" style="background-color: ${catConfig.color}">
+                                <i class="fa-solid ${catConfig.icon}"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-semibold text-sm text-slate-800">${escapeHtml(t.category)}</span>
+                                    <span class="text-xs text-slate-400">${escapeHtml(t.date)}</span>
+                                </div>
+                                ${t.memo ? `<p class="text-xs text-slate-500 mt-0.5">${escapeHtml(t.memo)}</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="${amountClass} text-sm">${amountPrefix}${formatCurrency(t.amount)}</span>
+                            <button onclick="window.deleteTransaction('${t.id}')" class="text-slate-300 hover:text-rose-500 transition p-1 opacity-0 group-hover:opacity-100" title="削除">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderChart(categoryTotals) {
+            const chartCanvas = document.getElementById('category-chart');
+            if (!chartCanvas) return;
+            const ctx = chartCanvas.getContext('2d');
+            const labels = Object.keys(categoryTotals);
+            const data = Object.values(categoryTotals);
+
+            if (labels.length === 0) {
+                chartNoData.classList.remove('hidden');
+                if (chartInstance) {
+                    chartInstance.destroy();
+                    chartInstance = null;
+                }
+                return;
+            }
+
+            chartNoData.classList.add('hidden');
+
+            const colors = labels.map(label => {
+                const cat = CATEGORIES.expense.find(c => c.name === label);
+                return cat ? cat.color : '#94a3b8';
+            });
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15,
+                                font: { size: 11 }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
         monthPicker.addEventListener('change', (e) => {
             selectedYearMonth = e.target.value;
             renderDashboard();
@@ -595,9 +811,8 @@
             renderDashboard();
         });
 
-        // Modal Controls & Dynamic Category Loading
         function updateCategoryOptions(type) {
-            const options = CATEGORIES[type];
+            const options = CATEGORIES[type] || [];
             inputCategory.innerHTML = options.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         }
 
@@ -617,7 +832,6 @@
             });
         });
 
-        // Form Submit Handler
         entryForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!currentUser) return;
